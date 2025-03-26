@@ -2,7 +2,7 @@ package org.example.scoreboard;
 
 import org.junit.Before;
 import org.junit.Test;
-
+import java.util.List;
 import static org.junit.Assert.*;
 
 public class InMemoryScoreboardTest {
@@ -28,6 +28,40 @@ public class InMemoryScoreboardTest {
         // 3) Check scoreboard summary
         assertEquals("Should be exactly 1 match in summary", 1, scoreboard.getSummary().size());
         assertEquals(match, scoreboard.getSummary().get(0));
+    }
+
+    @Test
+    public void testSummaryMultipleGamesRandomResults() {
+        // Start multiple matches (order matters for tie-breaker: later started match comes first)
+        Match m1 = scoreboard.startMatch("Team A", "Team B"); // first match
+        Match m2 = scoreboard.startMatch("Team C", "Team D"); // second match
+        Match m3 = scoreboard.startMatch("Team E", "Team F"); // third match
+        Match m4 = scoreboard.startMatch("Team G", "Team H"); // fourth match
+        Match m5 = scoreboard.startMatch("Team I", "Team J"); // fifth match
+
+        // Update scores with random values:
+        scoreboard.updateScore(m1, 1, 0); // Total = 1
+        scoreboard.updateScore(m2, 2, 2); // Total = 4
+        scoreboard.updateScore(m3, 0, 3); // Total = 3
+        scoreboard.updateScore(m4, 3, 3); // Total = 6
+        scoreboard.updateScore(m5, 2, 1); // Total = 3
+
+    /*
+     Expected ordering:
+     1. m4: Total score 6 (highest)
+     2. m2: Total score 4 (second highest)
+     3. Tie between m3 and m5 (both total 3):
+         - Since m5 was started after m3, m5 comes before m3.
+     4. m1: Total score 1 (lowest)
+    */
+
+        List<Match> summary = scoreboard.getSummary();
+        assertEquals(5, summary.size());
+        assertEquals(m4, summary.get(0));
+        assertEquals(m2, summary.get(1));
+        assertEquals(m5, summary.get(2)); // m5 is more recent than m3
+        assertEquals(m3, summary.get(3));
+        assertEquals(m1, summary.get(4));
     }
 
     @Test
